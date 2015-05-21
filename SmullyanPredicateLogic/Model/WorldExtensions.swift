@@ -6,12 +6,15 @@
 //  Copyright (c) 2015 Guts & Glory ApS. All rights reserved.
 //
 
-import Foundation
-
 extension World {
+    
+    /// A textual representation of `self`.
     override var description : String {
         get {
-            return "\n".join(self.agents.values.array.map{ $0.description })
+            let joinedProposition = ", ".join(self.propositions)
+            let joinedAgents = "\n".join(self.agents.values.array.map{ $0.description })
+            
+            return "Proposition: \(joinedProposition)\n\(joinedAgents)"
         }
     }
 }

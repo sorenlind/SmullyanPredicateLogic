@@ -8,32 +8,44 @@
 
 import Foundation
 
+/// A collection of worlds which can be filtered by applying knowledge from a puzzle text.
 struct Puzzle {
     
+    /// The number of possible worlds in the puzzle.
     var count : Int { get { return self.worlds.count } }
     
+    /// The possible worlds.
     private(set) var worlds : [World]
     
+    /// Create an instance containing `worlds`.
     init(worlds: [World]) {
         self.worlds = worlds
     }
     
+    /// Apply a filter by throwing away all worlds in which the specified filter expression is not true.
     mutating func applyExpressionFilter(filter : LogicExpression) {
         
-        self.worlds = self.worlds.filter(filter)
+        let boundFilter = { (world : World) -> Bool in
+            return filter(world, [:])
+        }
+        
+        self.worlds = self.worlds.filter(boundFilter)
     }
     
+    /// Apply a filter by asking the agent with name `agentName` whether `question` is true. Remove all worlds in which the agent does
+    /// not provide the answer 'true'.
     mutating func applyQuestionFilter(
         question : LogicExpression,
         agentName : String) {
             
-            let questionToAgentInWorld = PredicateLogic.questionToAgentWithName(
-                agentName,
-                question: question)
+            let questionToAgentInWorld = PredicateLogic.questionToAgentWithName(agentName, question: question)
             
             self.applyExpressionFilter(questionToAgentInWorld)
     }
     
+    /// For each element `x` of `statements` temporarily apply a filter which requires that agent with name `agentName` would state `x`.
+    /// If applying the filter makes the value of all elements in `checkExpressions` known, then permanently apply the filter and return.
+    /// If none of the filters make all elements in `checkExpressions` known, remove all possible worlds.
     mutating func applyMetaPuzzleFilterStatements(
         statements : [LogicExpression],
         agentName : String,
@@ -45,10 +57,13 @@ struct Puzzle {
                 checkExpressions: checkExpressions)
     }
     
+
+    /// Query `self` for the value of `expression` over all worlds. Returns 'true' if `expression` is
+    /// `true` in all worlds. Returns `false` if the expression is `false` in all worlds. Return `nil` otherwise.
     func query(expression : LogicExpression) -> Bool? {
         
         if self.expressionValueConstantOverAllWorlds(expression) {
-            return expression(self.worlds[0])
+            return expression(self.worlds[0], [:])
         }
         
         return nil
@@ -56,9 +71,9 @@ struct Puzzle {
     
     private func expressionValueConstantOverAllWorlds(expression : LogicExpression) -> Bool {
         
-        let valueOfFirst = expression(self.worlds[0])
+        let valueOfFirst = expression(self.worlds[0], [:])
         
-        return self.worlds.all({ world -> Bool in expression(world) == valueOfFirst})
+        return self.worlds.all({ world -> Bool in expression(world, [:]) == valueOfFirst})
     }
     
     private func calculateWorldsFromMetaPuzzleStatements(
@@ -85,14 +100,12 @@ struct Puzzle {
         checkExpressions : [LogicExpression])
         -> [World]? {
             
-            // We can easily create a copy because Puzzle is a struct
             var tempPuzzle = self
             tempPuzzle.applyQuestionFilter(statement, agentName: agentName)
             
-            if tempPuzzle.count == 0 ||
-                !tempPuzzle.valueKnownForExpressions(checkExpressions) {
-                    // No possible worlds or not a constant value of at least one of the check expressions
-                    return nil
+            if tempPuzzle.count == 0 || !tempPuzzle.valueKnownForExpressions(checkExpressions) {
+                // No possible worlds or not a constant value of at least one of the check expressions
+                return nil
             }
             
             return tempPuzzle.worlds

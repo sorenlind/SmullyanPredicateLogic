@@ -8,11 +8,19 @@
 
 import Foundation
 
+/// A configuration of propositions and agents.
 class World: NSObject {
     
+    /// The propositions that are true in the world.
+    let propositions : Set<String>
+    
+    /// The agents in the world.
     let agents : Dictionary<String, Agent>
     
-    init(agents : [Agent]) {
+    /// Create an instance in which all elements of `propositions` are true and which contains the elements of `agents`.
+    init(propositions: [String], agents : [Agent]) {
+        
+        self.propositions = Set(propositions)
         
         var temp = Dictionary<String, Agent>()
         for agent in agents {

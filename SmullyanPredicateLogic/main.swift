@@ -8,5 +8,4 @@
 
 import Foundation
 
-PuzzleBook.puzzle76()
-
+PuzzleBook.puzzle80()
